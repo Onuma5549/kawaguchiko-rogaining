@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00658E">
+<title>河口湖おすすめマップ｜OB・先生向け</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+/* ============ Material 3 · tonal palette from a lake-blue source ============ */
+:root{
+  --primary:#00658E;            --on-primary:#FFFFFF;
+  --primary-container:#C6E7FF;  --on-primary-container:#001E2E;
+  --secondary:#4E616D;          --on-secondary:#FFFFFF;
+  --secondary-container:#D1E6F4;--on-secondary-container:#0A1E28;
+  --tertiary:#8A4A62;           --on-tertiary:#FFFFFF;
+  --tertiary-container:#FFD9E4; --on-tertiary-container:#3A071F;
+  --error:#BA1A1A;              --error-container:#FFDAD6; --on-error-container:#410002;
+
+  --surface:#F6FAFE;            --on-surface:#171C1F;
+  --surface-dim:#D6DAE0;        --surface-bright:#F6FAFE;
+  --surface-container-lowest:#FFFFFF;
+  --surface-container-low:#F0F4F9;
+  --surface-container:#EAEEF3;
+  --surface-container-high:#E4E9EE;
+  --surface-container-highest:#DEE3E8;
+  --on-surface-variant:#41484D; --outline:#71787D; --outline-variant:#C1C7CD;
+  --inverse-surface:#2C3134;    --inverse-on-surface:#EDF1F5;
+
+  /* shape scale */
+  --sh-xs:4px; --sh-s:8px; --sh-m:12px; --sh-l:16px; --sh-xl:28px; --sh-full:999px;
+  /* elevation */
+  --el1:0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
+  --el2:0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
+  --el3:0 4px 8px 3px rgba(0,0,0,.15), 0 1px 3px rgba(0,0,0,.30);
+}
+@media (prefers-color-scheme:dark){
+:root{
+  --primary:#84CFFF;            --on-primary:#00344C;
+  --primary-container:#004C6D;  --on-primary-container:#C6E7FF;
+  --secondary:#B5C9D7;          --on-secondary:#20333D;
+  --secondary-container:#374955;--on-secondary-container:#D1E6F4;
+  --tertiary:#FFB0C8;           --on-tertiary:#541D34;
+  --tertiary-container:#6F334A; --on-tertiary-container:#FFD9E4;
+  --error:#FFB4AB;              --error-container:#93000A; --on-error-container:#FFDAD6;
+
+  --surface:#0F1417;            --on-surface:#DEE3E8;
+  --surface-dim:#0F1417;        --surface-bright:#353A3E;
+  --surface-container-lowest:#0A0F12;
+  --surface-container-low:#171C1F;
+  --surface-container:#1B2024;
+  --surface-container-high:#262B2E;
+  --surface-container-highest:#303539;
+  --on-surface-variant:#C1C7CD; --outline:#8B9198; --outline-variant:#41484D;
+  --inverse-surface:#DEE3E8;    --inverse-on-surface:#2C3134;
+}
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--surface);color:var(--on-surface);
+  font-family:"Roboto","Noto Sans JP",system-ui,sans-serif;
+  font-size:16px;line-height:1.8;font-feature-settings:"palt" 1;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 80px}
+
+/* ---------- M3 type scale ---------- */
+.display-s{font-size:clamp(30px,7.5vw,36px);line-height:1.28;font-weight:500;letter-spacing:0}
+.headline-s{font-size:24px;line-height:1.35;font-weight:500;letter-spacing:0}
+.title-l{font-size:20px;line-height:1.4;font-weight:500}
+.title-m{font-size:16px;line-height:1.5;font-weight:500;letter-spacing:.15px}
+.body-m{font-size:14px;line-height:1.72;letter-spacing:.25px}
+.label-l{font-size:14px;line-height:1.43;font-weight:500;letter-spacing:.1px}
+.label-m{font-size:12px;line-height:1.34;font-weight:500;letter-spacing:.5px}
+
+/* ---------- top app bar ---------- */
+.appbar{
+  position:sticky;top:0;z-index:900;
+  background:var(--surface-container);
+  border-bottom:1px solid transparent;
+  transition:box-shadow .2s,border-color .2s;
+}
+.appbar.raised{box-shadow:var(--el2)}
+.appbar .inner{
+  max-width:760px;margin:0 auto;padding:0 16px;
+  height:56px;display:flex;align-items:center;gap:12px;
+}
+.appbar .ttl{font-size:16px;font-weight:500;color:var(--on-surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar .ms{color:var(--primary)}
+
+/* ---------- hero ---------- */
+.hero{
+  background:var(--primary-container);color:var(--on-primary-container);
+  border-radius:0 0 var(--sh-xl) var(--sh-xl);
+  padding:36px 24px 28px;margin:0 -16px 24px;
+}
+.hero .over{font-size:12px;font-weight:500;letter-spacing:.5px;opacity:.8;margin:0 0 10px}
+.hero h1{margin:0 0 22px;font-weight:500}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.fact{
+  background:var(--surface-container-lowest);color:var(--on-surface);
+  border-radius:var(--sh-m);padding:8px 14px;display:flex;flex-direction:column;
+}
+.fact span{font-size:11px;color:var(--on-surface-variant);letter-spacing:.5px}
+.fact b{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* ---------- sections & cards ---------- */
+section{margin:0 0 12px}
+.sec-head{padding:20px 8px 8px}
+.sec-head h2{margin:0;color:var(--primary)}
+.sec-head p{margin:6px 0 0;color:var(--on-surface-variant)}
+
+.card{
+  background:var(--surface-container-low);border-radius:var(--sh-m);
+  padding:20px;margin:0 0 12px;
+}
+.card.outlined{background:var(--surface);border:1px solid var(--outline-variant)}
+.card.elevated{background:var(--surface-container-lowest);box-shadow:var(--el1)}
+.card > :first-child{margin-top:0}
+.card > :last-child{margin-bottom:0}
+h3{margin:22px 0 8px;color:var(--on-surface);font-size:16px;font-weight:500;letter-spacing:.15px}
+p{margin:0 0 14px}
+ul.plain{margin:0 0 14px;padding-left:1.15em}
+ul.plain li{margin-bottom:6px}
+
+/* ---------- map ---------- */
+.mapcard{padding:0;overflow:hidden;background:var(--surface-container-low);border-radius:var(--sh-l);margin-bottom:12px}
+#map{height:min(72vh,560px);background:var(--surface-container-high)}
+.maptools{padding:14px 16px 16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  height:32px;padding:0 14px;border-radius:var(--sh-s);
+  border:1px solid var(--outline);background:transparent;color:var(--on-surface-variant);
+  font:500 13px/1 "Roboto","Noto Sans JP",sans-serif;letter-spacing:.1px;
+  cursor:pointer;transition:background .15s,border-color .15s,color .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.chip:hover{background:color-mix(in srgb, var(--on-surface) 8%, transparent)}
+.chip[aria-pressed="true"]{
+  background:var(--secondary-container);color:var(--on-secondary-container);border-color:transparent;
+}
+.chip .dot{width:12px;height:12px;border-radius:2px;flex:0 0 auto}
+.chip .ms{font-size:18px}
+.scale{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 0}
+.scale .sw{
+  width:34px;height:26px;border-radius:var(--sh-xs);display:grid;place-items:center;
+  font:500 11px/1 "Roboto",sans-serif;font-variant-numeric:tabular-nums;
+}
+.hint{margin:12px 0 0;color:var(--on-surface-variant);font-size:12.5px;line-height:1.65}
+
+/* control marker / avatar */
+.pin{
+  width:36px;height:36px;border-radius:var(--sh-full);
+  display:flex;align-items:center;justify-content:center;
+  font:700 13px/1 "Roboto",sans-serif;font-variant-numeric:tabular-nums;
+  flex:0 0 auto;letter-spacing:.2px;
+}
+
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse;margin:0 0 14px;font-size:14px}
+th,td{text-align:left;padding:12px 12px;border-bottom:1px solid var(--outline-variant)}
+th{color:var(--on-surface-variant);font-weight:500;font-size:12px;letter-spacing:.5px}
+tr:last-child td{border-bottom:none}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500;color:var(--primary)}
+
+/* ---------- highlight blocks ---------- */
+.note{
+  background:var(--secondary-container);color:var(--on-secondary-container);
+  border-radius:var(--sh-m);padding:16px 18px;margin:0 0 14px;font-size:14px;line-height:1.72;
+  display:flex;gap:12px;
+}
+.note .ms{flex:0 0 auto;font-size:20px;margin-top:2px}
+.note.alert{background:var(--error-container);color:var(--on-error-container)}
+.note.key{background:var(--tertiary-container);color:var(--on-tertiary-container)}
+.note p{margin:0 0 8px}
+.note p:last-child{margin:0}
+
+/* ---------- control list ---------- */
+.tier{margin:0 0 8px}
+.tierhead{display:flex;align-items:center;gap:12px;padding:14px 4px 8px}
+.tierhead b{font-size:18px;color:var(--primary);font-variant-numeric:tabular-nums;font-weight:500}
+.tierhead span{font-size:12.5px;color:var(--on-surface-variant);line-height:1.4}
+.item{
+  display:flex;gap:16px;align-items:center;padding:10px 12px;
+  border-radius:var(--sh-m);
+}
+.item + .item{margin-top:2px}
+.item:nth-child(odd){background:var(--surface-container-low)}
+.item .body{min-width:0;flex:1}
+.item .nm{font-size:15px;font-weight:500;color:var(--on-surface);display:block;line-height:1.45}
+.item .memo{font-size:12.5px;color:var(--on-surface-variant);display:block;line-height:1.6}
+.dirchip{
+  display:inline-block;height:20px;padding:0 8px;border-radius:var(--sh-full);
+  background:var(--surface-container-highest);color:var(--on-surface-variant);
+  font:500 11px/20px "Roboto","Noto Sans JP",sans-serif;margin-right:8px;vertical-align:1px;
+}
+.item a{
+  display:grid;place-items:center;width:40px;height:40px;border-radius:var(--sh-full);
+  color:var(--primary);text-decoration:none;flex:0 0 auto;transition:background .15s;
+}
+.item a:hover{background:color-mix(in srgb, var(--primary) 12%, transparent)}
+
+/* ---------- routes ---------- */
+.route{border-radius:var(--sh-m);padding:18px 20px;margin:0 0 12px;background:var(--surface-container-low)}
+.route .rh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 4px}
+.route .bar{width:28px;height:4px;border-radius:2px}
+.route .rn{font-size:17px;font-weight:500}
+.route .rd{font-size:12.5px;color:var(--on-surface-variant);margin-left:auto}
+.seq{font-size:13.5px;line-height:2.1;margin:10px 0 12px;color:var(--on-surface)}
+.seq b{
+  display:inline-block;min-width:26px;text-align:center;border-radius:var(--sh-full);
+  background:var(--surface-container-highest);color:var(--on-surface-variant);
+  font:700 11.5px/18px "Roboto",sans-serif;margin-right:3px;font-variant-numeric:tabular-nums;
+}
+.route .rnote{font-size:13px;color:var(--on-surface-variant);margin:0;line-height:1.7}
+
+/* ---------- misc ---------- */
+.ms{font-family:"Material Symbols Rounded";font-weight:400;font-style:normal;
+  line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;
+  white-space:nowrap;direction:ltr;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';
+  -webkit-font-smoothing:antialiased;font-size:20px;}
+footer{padding:24px 8px 0;color:var(--on-surface-variant);font-size:12.5px;line-height:1.75}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:var(--sh-xs)}
+
+.leaflet-popup-content-wrapper{border-radius:var(--sh-m)!important;box-shadow:var(--el3)!important;
+  background:var(--surface-container-lowest)!important;color:var(--on-surface)!important}
+.leaflet-popup-tip{background:var(--surface-container-lowest)!important}
+.leaflet-popup-content{margin:14px 16px!important;font-family:"Roboto","Noto Sans JP",sans-serif!important;line-height:1.7!important}
+.leaflet-container{font-family:"Roboto","Noto Sans JP",sans-serif!important}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  body{background:#fff;color:#000;font-size:10.5pt}
+  .appbar,.mapcard,.chips,.scale,.hint,.item a{display:none}
+  .hero{background:none;color:#000;border-bottom:2px solid #000;border-radius:0;padding:0 0 14px;margin:0 0 14px}
+  .card,.route,.note,.item:nth-child(odd){background:none!important;border:none;padding:0 0 4px}
+  .note{border-left:3px solid #666;padding-left:12px;margin-bottom:12px}
+  section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<div class="appbar" id="appbar"><div class="inner">
+  <span class="ms">hiking</span>
+  <span class="ttl">河口湖おすすめマップ｜OB・先生向け</span>
+</div></div>
+
+<div class="wrap">
+
+<div class="hero">
+  <p class="over">2026 小池研合宿 · 2日目</p>
+  <h1 class="display-s">河口湖<br>おすすめマップ</h1>
+  <ul class="facts">
+    <li class="fact"><span>日時</span><b>9/12 土</b></li>
+    <li class="fact"><span>自由行動</span><b>12:00 – 15:00</b></li>
+    <li class="fact"><span>集合</span><b>セントビレッヂ</b></li>
+  </ul>
+</div>
+
+<section>
+  <div class="sec-head"><h2 class="headline-s">当日の流れ</h2></div>
+  <div class="card">
+    <table>
+      <tr><th>時刻</th><th>内容</th></tr>
+      <tr><td>10:00〜15:00</td><td>学生4チームがフォトロゲイニングを実施</td></tr>
+      <tr><td>12:00</td><td>OBの皆さま到着（先生は午前中から自由行動）</td></tr>
+      <tr><td>12:00〜15:00</td><td><b>自由行動</b>（昼食＋周辺散策）</td></tr>
+      <tr><td>15:00〜</td><td>セントビレッヂに集合、結果発表</td></tr>
+    </table>
+    <p class="body-m">完全に自由行動ですので、気の向くままにお過ごしください。先生とOBの皆さまは別々に動いていただいて構いません。</p>
+    <div class="note key">
+      <span class="ms">groups</span>
+      <p><b>ひとつだけお願いがあります。</b>どこへ行かれたかを覚えておいてください。皆さまが立ち寄られた場所は、そこを訪れた学生チームの得点が1.5倍になるルールにしています。先生の分とOBの分は別々に数えるので、両方が行った場所は2倍です。</p>
+      <p>どこへ行かれるかは学生には伏せてあります。結果発表のときに公開します。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2 class="headline-s">地図</h2>
+    <p class="body-m">色は用途で分けています。ピンをタップすると詳細が出ます。</p>
+  </div>
+  <div class="mapcard">
+    <div id="map"></div>
+    <div class="maptools">
+      <div class="chips" id="catchips"></div>
+      <p class="hint">学生はこの地図に載っている場所の多くを回っています。どこかで見かけたら、ぜひ声をかけてやってください。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><h2 class="headline-s">おすすめスポット</h2></div>
+  <div id="list"></div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2 class="headline-s">交通の案内</h2>
+    <p class="body-m">車で来られる方は読み飛ばしてください。</p>
+  </div>
+  <div class="card">
+    <h3>周遊バス</h3>
+    <table>
+      <tr><th>路線</th><th>行き先</th><th style="text-align:right">本数</th></tr>
+      <tr><td>レッドライン</td><td>北岸（美術館通り・大石公園）</td><td class="num">15分間隔</td></tr>
+      <tr><td>グリーンライン</td><td>南岸〜勝山〜西湖</td><td class="num">少ない</td></tr>
+      <tr><td>ブルーライン</td><td>鳴沢・精進湖・本栖湖</td><td class="num">少ない</td></tr>
+    </table>
+    <p class="body-m">いずれも河口湖駅発。共通フリークーポンの1Day Passが大人1,500円で、河口湖駅のバス窓口・車内・オンラインで買えます。<b>富士急行線（電車）と忍野方面のバスは対象外</b>です。</p>
+    <p class="body-m">北岸を回られるならレッドラインが便利です。15分間隔で、美術館通りから大石公園まで一本で行けます。</p>
+
+    <h3>鳴沢氷穴・西湖方面へ行かれる場合</h3>
+    <p class="body-m">氷穴はブルーラインで河口湖駅から28分。往路は9:35 / 10:35 / 11:35 / 13:35発です。西湖いやしの里根場はグリーンラインで、こちらは本数が限られます。<b>復路の時刻を必ず確認してから向かってください。</b>氷穴には新富士線の路線バスも停まります。</p>
+
+    <h3>電車</h3>
+    <p class="body-m">富士急行線で河口湖駅から富士急ハイランド駅まで1駅、富士山駅まで2駅、下吉田駅まで3駅です。東方面は電車が速いです。</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><h2 class="headline-s">補足</h2></div>
+  <div class="card">
+    <ul class="plain body-m">
+      <li>9月12日は土曜日です。大石公園周辺は駐車場が混雑します。</li>
+      <li>ほうとう不動・小作は現金のみです。この地域は現金のみの店がまだ多くあります。</li>
+      <li>宿のチェックインは15:00です。それまでの荷物はフロントで預かってもらえます。</li>
+      <li>15:00までにセントビレッヂへお戻りください。</li>
+    </ul>
+    <div class="note">
+      <span class="ms">forum</span>
+      <p>何かありましたら幹事までご連絡ください。連絡先は別途Slackにてお知らせします。</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>法政大学 情報科学部 小池研究室　幹事：小沼 蒼生 ／ 井上 颯汰</p>
+</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const SPOTS=[
+ {cat:"昼食",n:"小作 河口湖店",lat:35.4957481,lng:138.7568631,m:"宿のすぐ隣。ほうとうの有名店で11:00〜19:30通し営業。到着してすぐ食べられます"},
+ {cat:"昼食",n:"甲梅屋",lat:35.5235767,lng:138.7455892,m:"大石公園のそば。10:30〜20:30と時間の融通が利き、ほうとう・天ぷら・定食が揃います"},
+ {cat:"昼食",n:"Troisieme Marche",lat:35.5217846,lng:138.7734826,m:"北岸の自家焙煎コーヒー店。11:30〜17:00。ケーキと珈琲でゆっくりする場所"},
+ {cat:"昼食",n:"BRAND NEW DAY（大石ハナテラス）",lat:35.5230511,lng:138.7446944,m:"大石公園の隣の商業施設内。ピザと珈琲。9:30〜18:00で一番時間に余裕があります"},
+ {cat:"昼食",n:"CISCO Coffee",lat:35.5108416,lng:138.7530533,m:"南岸の人気カフェ。土曜9:00〜17:00、水曜休"},
+ {cat:"散策",n:"大石公園",lat:35.5229040,lng:138.7457522,m:"湖越しに富士山を望む河口湖で一番の定番。隣のハナテラスに店が並びます"},
+ {cat:"散策",n:"久保田一竹美術館",lat:35.5273240,lng:138.7598324,m:"辻が花染めの着物と、ガウディ風の建築・庭園。10:00〜17:00"},
+ {cat:"散策",n:"河口湖音楽と森の美術館",lat:35.5224188,lng:138.7687150,m:"オルゴールの自動演奏とヨーロッパ風の庭園。雨天でも楽しめます"},
+ {cat:"散策",n:"木ノ花美術館",lat:35.5243531,lng:138.7649959,m:"ダヤンの美術館。北岸ルートの途中"},
+ {cat:"散策",n:"長崎公園",lat:35.5215516,lng:138.7573478,m:"湖に突き出た小さな公園。人が少なく、ベンチに座って話すのに向いています"},
+ {cat:"散策",n:"河口浅間神社",lat:35.5309295,lng:138.7745467,m:"樹齢1200年の七本杉。杉並木の参道が見事です"},
+ {cat:"さっと",n:"産屋ヶ崎",lat:35.5126604,lng:138.7659103,m:"逆さ富士の展望点。河口湖大橋の北詰から徒歩3分と手軽"},
+ {cat:"さっと",n:"河口湖大橋",lat:35.5115335,lng:138.7643838,m:"歩道があり、渡るだけでも景色がいい"},
+ {cat:"さっと",n:"大池公園",lat:35.5076135,lng:138.7633616,m:"宿から徒歩15分。広い芝生。学生とばったり会う可能性が一番高いエリアです"},
+ {cat:"さっと",n:"河口湖ハーブ館",lat:35.5074460,lng:138.7619357,m:"大池公園に隣接。ラベンダーソフトが名物"},
+ {cat:"さっと",n:"六角堂",lat:35.5128986,lng:138.7586359,m:"湖に浮かぶ六角形の堂。渇水時は歩いて渡れます"},
+ {cat:"さっと",n:"富士山世界遺産センター",lat:35.4856913,lng:138.7706531,m:"入館無料の展示施設。宿から車で5分"},
+ {cat:"遠出",n:"西湖いやしの里根場",lat:35.5050023,lng:138.6614772,m:"茅葺き屋根の集落。車なら30分ほど。学生の最高配点地点のひとつです"},
+ {cat:"遠出",n:"鳴沢氷穴",lat:35.4749276,lng:138.6669694,m:"氷の洞穴。ヘルメット着用で狭い通路を進みます。見学は10〜20分ほど"},
+ {cat:"遠出",n:"新倉山浅間公園",lat:35.5013908,lng:138.8016313,m:"五重塔と富士山。階段398段。時間と体力に余裕があれば"},
+ {cat:"遠出",n:"忍野八海",lat:35.4600674,lng:138.8324749,m:"湧水の池が並ぶ集落。車で30分ほど"}
+];
+const START={lat:35.4959976,lng:138.7560319,n:"河口湖セントビレッヂ",m:"宿泊先。12:00集合／15:00集合"};
+const CAT={"昼食": "#8A4A62", "散策": "#00658E", "さっと": "#2E7D32", "遠出": "#E07B00"};
+const CATNAME={"昼食": "昼食におすすめ", "散策": "腰を据えて過ごす", "さっと": "さっと立ち寄る", "遠出": "少し足を延ばす"};
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const ORDER=["昼食","散策","さっと","遠出"];
+document.getElementById("list").innerHTML=ORDER.map(c=>`
+ <div class="tier">
+  <div class="tierhead"><b style="color:${CAT[c]}">${CATNAME[c]}</b></div>
+  ${SPOTS.filter(s=>s.cat===c).map(s=>`
+   <div class="item">
+    <div class="pin" style="background:${CAT[c]};color:#fff;font-size:16px">●</div>
+    <div class="body">
+     <span class="nm">${esc(s.n)}</span>
+     <span class="memo">${esc(s.m)}</span>
+    </div>
+   </div>`).join("")}
+ </div>`).join("");
+
+const map=L.map("map",{scrollWheelZoom:false});
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,
+ attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+function icon(bg,txt,sz){return L.divIcon({className:"",iconSize:[34,34],iconAnchor:[17,17],popupAnchor:[0,-17],
+ html:`<div class="pin" style="width:34px;height:34px;background:${bg};color:#fff;font-size:${sz};box-shadow:0 1px 3px rgba(0,0,0,.4)">${txt}</div>`});}
+function pop(t,m){return `<div style="font-weight:500;font-size:15px;margin-bottom:2px">${esc(t)}</div>
+ <div style="font-size:12.5px;color:#41484D">${esc(m)}</div>`;}
+const pts=[[START.lat,START.lng]];
+L.marker([START.lat,START.lng],{icon:icon("#0E3A4D","宿","11px"),zIndexOffset:1000}).addTo(map).bindPopup(pop(START.n,START.m));
+const layers={};
+ORDER.forEach(c=>{layers[c]=L.layerGroup();});
+SPOTS.forEach(s=>{
+ L.marker([s.lat,s.lng],{icon:icon(CAT[s.cat],"●","15px")}).bindPopup(pop(s.n,s.m)).addTo(layers[s.cat]);
+ pts.push([s.lat,s.lng]);
+});
+ORDER.forEach(c=>layers[c].addTo(map));
+document.getElementById("catchips").innerHTML=ORDER.map(c=>
+ `<button class="chip" type="button" aria-pressed="true" data-k="${c}"><span class="dot" style="background:${CAT[c]}"></span>${CATNAME[c]}</button>`).join("");
+document.querySelectorAll("#catchips .chip").forEach(b=>b.addEventListener("click",()=>{
+ const on=b.getAttribute("aria-pressed")==="true";
+ b.setAttribute("aria-pressed",String(!on));
+ on?map.removeLayer(layers[b.dataset.k]):layers[b.dataset.k].addTo(map);
+}));
+map.fitBounds(L.latLngBounds(pts).pad(0.08));
+map.on("click",()=>map.scrollWheelZoom.enable());
+const bar=document.getElementById("appbar");
+addEventListener("scroll",()=>bar.classList.toggle("raised",scrollY>8),{passive:true});
+</script>
+</body>
+</html>

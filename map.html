@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00658E">
+<title>河口湖フォトロゲイニング｜コース地図</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --primary:#00658E; --on-primary:#FFFFFF;
+  --surface:#F6FAFE; --on-surface:#171C1F; --on-surface-variant:#41484D;
+  --surface-container-lowest:#FFFFFF; --surface-container:#EAEEF3;
+  --outline-variant:#C1C7CD;
+  --el2:0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
+  --el3:0 4px 8px 3px rgba(0,0,0,.15), 0 1px 3px rgba(0,0,0,.30);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--surface);color:var(--on-surface);
+  font-family:"Roboto","Noto Sans JP",system-ui,sans-serif;
+  display:flex;flex-direction:column;
+}
+.appbar{
+  background:var(--surface-container);box-shadow:var(--el2);z-index:1000;
+  display:flex;align-items:center;gap:10px;height:52px;padding:0 16px;flex:0 0 auto;
+}
+.appbar b{font-size:15px;font-weight:500}
+.appbar span{font-size:12px;color:var(--on-surface-variant)}
+#map{flex:1 1 auto;min-height:0}
+
+.pin{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font:700 14px/1 "Roboto",sans-serif;font-variant-numeric:tabular-nums;
+  box-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+.legend{
+  position:absolute;right:10px;bottom:10px;z-index:500;
+  background:var(--surface-container-lowest);border-radius:12px;box-shadow:var(--el2);
+  padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px;max-width:220px;
+}
+.legend .sw{
+  width:30px;height:24px;border-radius:6px;display:grid;place-items:center;
+  font:700 11px/1 "Roboto",sans-serif;
+}
+.leaflet-popup-content-wrapper{border-radius:12px!important;box-shadow:var(--el3)!important}
+.leaflet-popup-content{margin:14px 16px!important;font-family:"Roboto","Noto Sans JP",sans-serif!important;line-height:1.7!important;font-size:14px!important}
+.leaflet-container{font-family:"Roboto","Noto Sans JP",sans-serif!important}
+</style>
+</head>
+<body>
+
+<div class="appbar">
+  <b>河口湖フォトロゲイニング</b><span>コース地図・全37コントロール</span>
+</div>
+<div style="position:relative;flex:1 1 auto;min-height:0">
+  <div id="map" style="height:100%"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const START = {lat:35.4959976,lng:138.7560319,name:"河口湖セントビレッヂ",memo:"スタート／ゴール。10:00発、15:00帰着"};
+
+const C = [
+ {no:"21",t:20,d:"南",  lat:35.4957481,lng:138.7568631,n:"小作 河口湖店"},
+ {no:"23",t:20,d:"南",  lat:35.4930644,lng:138.7557865,n:"ハーブ庭園旅日記"},
+ {no:"24",t:20,d:"南",  lat:35.4910536,lng:138.7570693,n:"ほうとう不動 東恋路店"},
+ {no:"31",t:30,d:"東",  lat:35.4982362,lng:138.7688409,n:"河口湖駅"},
+ {no:"32",t:30,d:"西",  lat:35.4953920,lng:138.7442075,n:"Bakery and Cafe Esora"},
+ {no:"33",t:30,d:"南東",lat:35.4928664,lng:138.7680725,n:"Love in Bakery"},
+ {no:"34",t:30,d:"南",  lat:35.4868966,lng:138.7638892,n:"手打ちうどん 彩花"},
+ {no:"35",t:30,d:"北東",lat:35.5076135,lng:138.7633616,n:"大池公園"},
+ {no:"41",t:40,d:"南東",lat:35.4856913,lng:138.7706531,n:"富士山世界遺産センター"},
+ {no:"42",t:40,d:"南",  lat:35.4804081,lng:138.7595524,n:"河口湖ステラシアター"},
+ {no:"43",t:40,d:"西",  lat:35.5108416,lng:138.7530533,n:"CISCO Coffee"},
+ {no:"44",t:40,d:"北西",lat:35.5128986,lng:138.7586359,n:"六角堂"},
+ {no:"51",t:50,d:"北東",lat:35.5126604,lng:138.7659103,n:"産屋ヶ崎"},
+ {no:"52",t:50,d:"西",  lat:35.5106097,lng:138.7459962,n:"冨士御室浅間神社 里宮"},
+ {no:"61",t:60,d:"北",  lat:35.5217846,lng:138.7734826,n:"Troisieme Marche"},
+ {no:"62",t:60,d:"北",  lat:35.5243531,lng:138.7649959,n:"木ノ花美術館"},
+ {no:"63",t:60,d:"西",  lat:35.5046179,lng:138.7344405,n:"道の駅かつやま"},
+ {no:"64",t:60,d:"北東",lat:35.5063476,lng:138.7722775,n:"駒門展望広場"},
+ {no:"71",t:70,d:"北",  lat:35.5273240,lng:138.7598324,n:"久保田一竹美術館"},
+ {no:"72",t:70,d:"北西",lat:35.5215516,lng:138.7573478,n:"長崎公園"},
+ {no:"73",t:70,d:"北東",lat:35.5309295,lng:138.7745467,n:"河口浅間神社"},
+ {no:"74",t:70,d:"東",  lat:35.4924294,lng:138.8037455,n:"下吉田 本町通り"},
+ {no:"75",t:70,d:"南東",lat:35.4706960,lng:138.7922637,n:"北口本宮冨士浅間神社"},
+ {no:"76",t:70,d:"南",  lat:35.4528868,lng:138.7563759,n:"河口湖フィールドセンター"},
+ {no:"77",t:70,d:"東",  lat:35.4832338,lng:138.7979920,n:"金鳥居"},
+ {no:"78",t:70,d:"西",  lat:35.5055760,lng:138.7159988,n:"長浜親水広場"},
+ {no:"81",t:80,d:"北西",lat:35.5229040,lng:138.7457522,n:"大石公園"},
+ {no:"82",t:80,d:"北東",lat:35.5354370,lng:138.7826077,n:"母の白滝"},
+ {no:"83",t:80,d:"東",  lat:35.5013908,lng:138.8016313,n:"新倉山浅間公園"},
+ {no:"84",t:80,d:"東",  lat:35.4877001,lng:138.7819971,n:"富士急ハイランド NARUTOエリア シカマル"},
+ {no:"85",t:80,d:"南東",lat:35.4578306,lng:138.8035218,n:"富士山レーダードーム館"},
+ {no:"88",t:80,d:"西",  lat:35.4787264,lng:138.6925237,n:"富士山絶景ビュー展望台"},
+ {no:"91",t:90,d:"西",  lat:35.5218643,lng:138.7274250,n:"菓子屋 Bstone Bakers"},
+ {no:"102",t:100,d:"東",lat:35.4600674,lng:138.8324749,n:"忍野八海"},
+ {no:"151",t:150,d:"西",lat:35.5050023,lng:138.6614772,n:"西湖いやしの里根場"},
+ {no:"152",t:150,d:"西",lat:35.4776963,lng:138.6578277,n:"富岳風穴"},
+ {no:"153",t:150,d:"西",lat:35.4749276,lng:138.6669274,n:"鳴沢氷穴"}
+];
+
+const FILL={20:"#E3F2FB",30:"#C6E7FF",40:"#95D2F5",50:"#5FB6E3",60:"#2A95C9",70:"#00779F",80:"#00658E",90:"#004C6D",100:"#B36A85",150:"#8A4A62"};
+const TXT ={20:"#001E2E",30:"#001E2E",40:"#00243A",50:"#002438",60:"#FFFFFF",70:"#FFFFFF",80:"#FFFFFF",90:"#FFFFFF",100:"#FFFFFF",150:"#FFFFFF"};
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+document.getElementById("legend").innerHTML =
+  [20,30,40,50,60,70,80,90,100,150].map(t=>
+    `<span class="sw" style="background:${FILL[t]};color:${TXT[t]}">${t}</span>`).join("");
+
+const map=L.map("map",{zoomControl:true});
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+ maxZoom:18,
+ attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
+
+function icon(no,t,start){
+ const bg=start?"#8A4A62":FILL[t], fg=start?"#fff":TXT[t];
+ const size=start?40:38, fs=start?"12px":"14px";
+ return L.divIcon({className:"",iconSize:[size,size],iconAnchor:[size/2,size/2],popupAnchor:[0,-size/2],
+  html:`<div class="pin" style="width:${size}px;height:${size}px;background:${bg};color:${fg};font-size:${fs}">${no}</div>`});
+}
+function pop(title,memo){
+ return `<div style="font-weight:500;font-size:16px;margin-bottom:2px">${esc(title)}</div>
+  ${memo?`<div style="font-size:12.5px;color:#41484D">${esc(memo)}</div>`:""}`;
+}
+
+const pts=[[START.lat,START.lng]];
+L.marker([START.lat,START.lng],{icon:icon("発着",0,true),zIndexOffset:1000})
+ .addTo(map).bindPopup(pop(START.name,START.memo));
+C.forEach(c=>{
+ L.marker([c.lat,c.lng],{icon:icon(c.t,c.t)}).addTo(map)
+  .bindPopup(pop(c.no+"　"+c.n, c.t+"点・"+c.d));
+ pts.push([c.lat,c.lng]);
+});
+
+map.fitBounds(L.latLngBounds(pts).pad(0.06));
+</script>
+</body>
+</html>
